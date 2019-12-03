@@ -1,1 +1,7 @@
 .idea/**
+kotlin/.gradle/6.0
+kotlin/.gradle/buildOutputCleanup
+kotlin/.gradle/vcs-1
+kotlin/build/classes
+kotlin/build/kotlin
+kotlin/out/production
