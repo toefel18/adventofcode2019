@@ -15,10 +15,11 @@ fun main() {
     val (wire1, wire2) = File(ClassLoader.getSystemResource("day3-input.txt").file).readLines().map { it.split(",") }
     val path1: List<Point> = getCoordinatePath(wire1)
     val path2: List<Point> = getCoordinatePath(wire2)
-    val crossings = path1.intersect(path2).minus(origin).sortedBy { origin.manhattanDistanceTo(it) }
-    val closestManhattanDistance = origin.manhattanDistanceTo(crossings.first())
+    val crossings = path1.intersect(path2).minus(origin)
+    val closestManhattanDistance = crossings.map { origin.manhattanDistanceTo(it) }.min()!!
     println("part 1 = $closestManhattanDistance")
-    val closestCrossingInSteps = crossings.map { crossing -> path1.indexOf(crossing) + path2.indexOf(crossing) }.sorted().first()
+
+    val closestCrossingInSteps = crossings.map { crossing -> path1.indexOf(crossing) + path2.indexOf(crossing) }.min()!!
     println("part 2 = $closestCrossingInSteps")
 }
 
