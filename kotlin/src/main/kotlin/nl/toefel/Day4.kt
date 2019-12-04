@@ -11,7 +11,7 @@ fun main() {
 }
 
 fun hasAdjacentDigits(pwd: String) = (1 until pwd.length).any { pwd[it - 1] == pwd[it] }
-fun onlyIncreasing(pwd: String) = (1 until pwd.length).all {pwd[it - 1].toInt() <= pwd[it].toInt()}
+fun onlyIncreasing(pwd: String) = (1 until pwd.length).all { pwd[it - 1].toInt() <= pwd[it].toInt() }
 
 fun hasSinglePairOfAdjacentDigits(pwd: String): Boolean {
     for (i in 1 until (pwd.length - 1)) {
