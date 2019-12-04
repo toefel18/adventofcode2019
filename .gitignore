@@ -5,3 +5,4 @@ kotlin/.gradle/vcs-1
 kotlin/build/classes
 kotlin/build/kotlin
 kotlin/out/production
+kotlin/build/resources
