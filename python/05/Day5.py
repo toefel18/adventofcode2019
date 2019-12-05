@@ -1,96 +1,106 @@
-class OpcodeDef:
+class Instruction:
     def __init__(self, opcode):
         self.opcode = opcode
         self.raw = f"{opcode:05d}"
         self.code = int(self.raw[3:])
         self.param_modes = [int(self.raw[2]), int(self.raw[1]), int(self.raw[0])]
 
-    def offset_next_instruction(self, default_offset):
-        if self.opcode < 10:
-            return default_offset
-        else:
-            # increment with the number of values in the instruction
-            return len(str(self.opcode))
-
     def get_param(self, param, ipx):
-        if self.param_modes[param] == 0:
-            # dereference at address
-            return program[program[ipx + param]]
-        elif self.param_modes[param] == 1:
-            # interpret as value
-            return program[ipx + param]
+        if self.param_modes[param - 1] == 0:
+            return program[program[ipx + param]] # dereference at address
+        elif self.param_modes[param - 1] == 1:
+            return program[ipx + param]             # interpret as value
         else:
-            # unknown parameter mode
             raise ValueError
-
-
-# def op(ipx, op_function):
-#     x = program[program[ipx + 1]]
-#     y = program[program[ipx + 2]]
-#     program[program[ipx + 3]] = op_function(x, y)
-
 
 def run():
     ipx = 0
     while True:
-        opcode_def = OpcodeDef(program[ipx])
-        if opcode_def.code == 1:
-            program[program[ipx + 3]] = opcode_def.get_param(1, ipx) + opcode_def.get_param(2, ipx)
-            ipx += opcode_def.offset_next_instruction(4)
-        elif opcode_def.code == 2:
-            program[program[ipx + 3]] = opcode_def.get_param(1, ipx) * opcode_def.get_param(2, ipx)
-            ipx += opcode_def.offset_next_instruction(4)
-        elif opcode_def.code == 3:
-            program[program[ipx + 1]] = input()
-            ipx += opcode_def.offset_next_instruction(2)
-        elif opcode_def.code == 4:
-            print(f"OUTPUTTING: {opcode_def.get_param(1, ipx)}")
-            ipx += opcode_def.offset_next_instruction(2)
-        elif opcode_def.code == 99:
+        instruction = Instruction(program[ipx])
+        if instruction.code == 1:
+            param1 = instruction.get_param(1, ipx)
+            param2 = instruction.get_param(2, ipx)
+            program[program[ipx + 3]] = param1 + param2
+            ipx += 4
+        elif instruction.code == 2:
+            param1 = instruction.get_param(1, ipx)
+            param2 = instruction.get_param(2, ipx)
+            program[program[ipx + 3]] = param1 * param2
+            ipx += 4
+        elif instruction.code == 3:
+            program[program[ipx + 1]] = int(input(f"input value at ipx {ipx}: "))
+            ipx += 2
+        elif instruction.code == 4:
+            print(f"{instruction.get_param(1, ipx)}")
+            ipx += 2
+        elif instruction.code == 5:
+            param1 = instruction.get_param(1, ipx)
+            param2 = instruction.get_param(2, ipx)
+            if param1 != 0:
+                ipx = param2
+            else:
+                ipx += 3
+        elif instruction.code == 6:
+            param1 = instruction.get_param(1, ipx)
+            param2 = instruction.get_param(2, ipx)
+            if param1 == 0:
+                ipx = param2
+            else:
+                ipx += 3
+        elif instruction.code == 7:
+            param1 = instruction.get_param(1, ipx)
+            param2 = instruction.get_param(2, ipx)
+            if param1 < param2:
+                program[program[ipx + 3]] = 1
+            else:
+                program[program[ipx + 3]] = 0
+            ipx += 4
+        elif instruction.code == 8:
+            param1 = instruction.get_param(1, ipx)
+            param2 = instruction.get_param(2, ipx)
+            if param1 == param2:
+                program[program[ipx + 3]] = 1
+            else:
+                program[program[ipx + 3]] = 0
+            ipx += 4
+        elif instruction.code == 99:
             break
         else:
             print(f"op_counter index {ipx} has value {program[ipx]} in program {program}")
             raise ValueError(ipx)
 
+program = [3, 225, 1, 225, 6, 6, 1100, 1, 238, 225, 104, 0, 101, 14, 135, 224, 101, -69, 224, 224, 4, 224, 1002, 223, 8,
+           223, 101, 3, 224, 224, 1, 224, 223, 223, 102, 90, 169, 224, 1001, 224, -4590, 224, 4, 224, 1002, 223, 8, 223,
+           1001, 224, 1, 224, 1, 224, 223, 223, 1102, 90, 45, 224, 1001, 224, -4050, 224, 4, 224, 102, 8, 223, 223, 101,
+           5, 224, 224, 1, 224, 223, 223, 1001, 144, 32, 224, 101, -72, 224, 224, 4, 224, 102, 8, 223, 223, 101, 3, 224,
+           224, 1, 223, 224, 223, 1102, 36, 93, 225, 1101, 88, 52, 225, 1002, 102, 38, 224, 101, -3534, 224, 224, 4,
+           224, 102, 8, 223, 223, 101, 4, 224, 224, 1, 223, 224, 223, 1102, 15, 57, 225, 1102, 55, 49, 225, 1102, 11,
+           33, 225, 1101, 56, 40, 225, 1, 131, 105, 224, 101, -103, 224, 224, 4, 224, 102, 8, 223, 223, 1001, 224, 2,
+           224, 1, 224, 223, 223, 1102, 51, 39, 225, 1101, 45, 90, 225, 2, 173, 139, 224, 101, -495, 224, 224, 4, 224,
+           1002, 223, 8, 223, 1001, 224, 5, 224, 1, 223, 224, 223, 1101, 68, 86, 224, 1001, 224, -154, 224, 4, 224, 102,
+           8, 223, 223, 1001, 224, 1, 224, 1, 224, 223, 223, 4, 223, 99, 0, 0, 0, 677, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+           1105, 0, 99999, 1105, 227, 247, 1105, 1, 99999, 1005, 227, 99999, 1005, 0, 256, 1105, 1, 99999, 1106, 227,
+           99999, 1106, 0, 265, 1105, 1, 99999, 1006, 0, 99999, 1006, 227, 274, 1105, 1, 99999, 1105, 1, 280, 1105, 1,
+           99999, 1, 225, 225, 225, 1101, 294, 0, 0, 105, 1, 0, 1105, 1, 99999, 1106, 0, 300, 1105, 1, 99999, 1, 225,
+           225, 225, 1101, 314, 0, 0, 106, 0, 0, 1105, 1, 99999, 108, 226, 677, 224, 1002, 223, 2, 223, 1006, 224, 329,
+           1001, 223, 1, 223, 1007, 226, 226, 224, 1002, 223, 2, 223, 1006, 224, 344, 101, 1, 223, 223, 1008, 226, 226,
+           224, 102, 2, 223, 223, 1006, 224, 359, 1001, 223, 1, 223, 107, 226, 677, 224, 1002, 223, 2, 223, 1005, 224,
+           374, 101, 1, 223, 223, 1107, 677, 226, 224, 102, 2, 223, 223, 1006, 224, 389, 101, 1, 223, 223, 108, 677,
+           677, 224, 102, 2, 223, 223, 1006, 224, 404, 1001, 223, 1, 223, 1108, 677, 226, 224, 102, 2, 223, 223, 1005,
+           224, 419, 101, 1, 223, 223, 1007, 677, 226, 224, 1002, 223, 2, 223, 1006, 224, 434, 101, 1, 223, 223, 1107,
+           226, 226, 224, 1002, 223, 2, 223, 1006, 224, 449, 101, 1, 223, 223, 8, 677, 226, 224, 102, 2, 223, 223, 1006,
+           224, 464, 1001, 223, 1, 223, 1107, 226, 677, 224, 102, 2, 223, 223, 1005, 224, 479, 1001, 223, 1, 223, 1007,
+           677, 677, 224, 102, 2, 223, 223, 1005, 224, 494, 1001, 223, 1, 223, 1108, 677, 677, 224, 102, 2, 223, 223,
+           1006, 224, 509, 101, 1, 223, 223, 1008, 677, 677, 224, 102, 2, 223, 223, 1005, 224, 524, 1001, 223, 1, 223,
+           107, 226, 226, 224, 1002, 223, 2, 223, 1005, 224, 539, 101, 1, 223, 223, 7, 226, 226, 224, 102, 2, 223, 223,
+           1005, 224, 554, 101, 1, 223, 223, 1108, 226, 677, 224, 1002, 223, 2, 223, 1006, 224, 569, 1001, 223, 1, 223,
+           107, 677, 677, 224, 102, 2, 223, 223, 1005, 224, 584, 101, 1, 223, 223, 7, 677, 226, 224, 1002, 223, 2, 223,
+           1005, 224, 599, 101, 1, 223, 223, 108, 226, 226, 224, 1002, 223, 2, 223, 1005, 224, 614, 101, 1, 223, 223,
+           1008, 677, 226, 224, 1002, 223, 2, 223, 1005, 224, 629, 1001, 223, 1, 223, 7, 226, 677, 224, 102, 2, 223,
+           223, 1005, 224, 644, 101, 1, 223, 223, 8, 677, 677, 224, 102, 2, 223, 223, 1005, 224, 659, 1001, 223, 1, 223,
+           8, 226, 677, 224, 102, 2, 223, 223, 1006, 224, 674, 1001, 223, 1, 223, 4, 223, 99, 226]
 
-program = [1, 9, 10, 3, 2, 3, 11, 0, 99, 30, 40, 50]
 run()
-print(program)
 
-program = [1, 0, 0, 0, 99]
-run()
-print(program)
-
-program = [2, 3, 0, 3, 99]
-run()
-print(program)
-
-program = [2, 4, 4, 5, 99, 0]
-run()
-print(program)
-
-program = [1, 1, 1, 4, 99, 5, 6, 0, 99]
-run()
-print(program)
-
-# part 1
-input = [1, 0, 0, 3, 1, 1, 2, 3, 1, 3, 4, 3, 1, 5, 0, 3, 2, 13, 1, 19, 1, 6, 19, 23, 2, 23, 6, 27, 1, 5, 27, 31, 1,
-         10, 31, 35, 2, 6, 35, 39, 1, 39, 13, 43, 1, 43, 9, 47, 2, 47, 10, 51, 1, 5, 51, 55, 1, 55, 10, 59, 2, 59, 6,
-         63, 2, 6, 63, 67, 1, 5, 67, 71, 2, 9, 71, 75, 1, 75, 6, 79, 1, 6, 79, 83, 2, 83, 9, 87, 2, 87, 13, 91, 1, 10,
-         91, 95, 1, 95, 13, 99, 2, 13, 99, 103, 1, 103, 10, 107, 2, 107, 10, 111, 1, 111, 9, 115, 1, 115, 2, 119, 1,
-         9, 119, 0, 99, 2, 0, 14, 0]
-
-program = list(input)
-program[1] = 12
-program[2] = 2
-run()
-print(program)
-
-for noun in range(100):
-    for verb in range(100):
-        program = input.copy()
-        program[1] = noun
-        program[2] = verb
-        run()
-        if program[0] == 19690720:
-            print(f"part 2: result={program[0]} verb={verb} noun={noun}  100*noun +verb = {(100 * noun) + verb}")
+# part 1 -> run program, enter 1, see final output
+# part 2 -> run program, enter 5, see ouput
