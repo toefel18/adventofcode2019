@@ -9,20 +9,18 @@ fun main() {
         .toMap()
 
     val vertices = (edges.keys + edges.values).toSet().minus("COM")
-    val orbits = vertices.map { countOrbitsTo(it, "COM", edges) }.sum()
+    val orbits = vertices.map { countOrbits(from = it, to = "COM", edges = edges) }.sum()
     println("part1 = $orbits")
 
-    val sanOrbiting = orbitPath("SAN", "COM", edges).reversed()
-    val youOrbiting = orbitPath("YOU", "COM", edges).reversed()
+    val sanOrbiting = orbitPath(from = "SAN", to = "COM", edges = edges).reversed()
+    val youOrbiting = orbitPath(from = "YOU", to = "COM", edges = edges).reversed()
     val pathsJoinAtObject = youOrbiting.find { sanOrbiting.indexOf(it) > 0 }
     val stepsBetween = sanOrbiting.indexOf(pathsJoinAtObject) + youOrbiting.indexOf(pathsJoinAtObject)
     println("part2 = $stepsBetween")
 }
 
-fun countOrbitsTo(from: String, to: String, edges: Map<String, String>): Long {
-    val next = edges[from]
-    return if (next == to) return 1 else 1 + countOrbitsTo(next!!, to, edges)
-}
+fun countOrbits(from: String, to: String, edges: Map<String, String>): Long =
+    if (edges[from] == to) 1 else 1 + countOrbits(edges[from]!!, to, edges)
 
 fun orbitPath(from: String, to: String, edges: Map<String, String>): List<String> {
     val next = edges[from]
