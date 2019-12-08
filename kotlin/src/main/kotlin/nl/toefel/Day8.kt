@@ -4,10 +4,7 @@ import java.io.File
 
 fun main() {
     val input = File(ClassLoader.getSystemResource("day8-input.txt").file).readText()
-
-    val width = 25
-    val height = 6
-
+    val (width, height) = Pair(25, 6)
     val layers = input
         .windowed(width, width, true)
         .windowed(height, height, true)
@@ -25,5 +22,4 @@ fun main() {
         }
         println()
     }
-
 }
