@@ -12,7 +12,7 @@ fun main() {
         .windowed(width, width, true)
         .windowed(height, height, true)
 
-    val layerLeastZeros = layers.sortedBy { row -> row.sumBy { column -> column.count { it == '0' } } }[0]
+    val layerLeastZeros = layers.minBy { row -> row.sumBy { column -> column.count { it == '0' } } }!!
     val count1 = layerLeastZeros.sumBy { row -> row.count { column -> column == '1' } }
     val count2 = layerLeastZeros.sumBy { row -> row.count { column -> column == '2' } }
 
