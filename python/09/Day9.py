@@ -154,3 +154,11 @@ inputs = [1]
 output = []
 run(inputs, output, memory)
 print(f"part 1 = {output}")
+
+
+program_as_dict = {i: boost_software[i] for i in range(len(boost_software))}
+memory = Memory(program_as_dict)
+inputs = [2]
+output = []
+run(inputs, output, memory)
+print(f"part 2 = {output}")
