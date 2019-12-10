@@ -14,11 +14,10 @@ data class Point(val x: Int, val y: Int) {
 
     override fun toString(): String = "($x,$y)"
 
-    val radian = 0.0174533
+    private val radian = 0.0174533
     fun angleInDegrees(origin: Point): Double {
         val delta = (this - origin)
         val angle = Math.atan2(delta.x * 1.0, -1.0 * delta.y) / radian
-//        return angle
         return if (angle < 0) 360 + angle else angle
     }
 }
@@ -77,31 +76,6 @@ data class Grid(val width: Int, val height: Int, val source: Point, val asteroid
 }
 
 fun main() {
-    val center = Point(5, 5)
-    val point = Point(6, 4)
-
-    println(point.angleInDegrees(center))
-
-    println(Point(0, 2).angleInDegrees(center))
-    println(Point(1, 2).angleInDegrees(center))
-    println(Point(2, 2).angleInDegrees(center))
-    println(Point(2, 1).angleInDegrees(center))
-    println(Point(2, 0).angleInDegrees(center))
-    println(Point(2, -1).angleInDegrees(center))
-    println(Point(2, -2).angleInDegrees(center))
-    println(Point(1, -2).angleInDegrees(center))
-    println(Point(1, -2).angleInDegrees(center))
-    println(Point(0, -2).angleInDegrees(center))
-    println(Point(-1, -2).angleInDegrees(center))
-    println(Point(-2, -2).angleInDegrees(center))
-    println(Point(-2, -1).angleInDegrees(center))
-    println(Point(-2, 0).angleInDegrees(center))
-    println(Point(-2, 1).angleInDegrees(center))
-    println(Point(-2, 2).angleInDegrees(center))
-
-
-
-//    return;
     val inputLines = File(ClassLoader.getSystemResource("day10-input.txt").file).readLines()
     val asteroids = inputLines
         .mapIndexed { y, row -> row.mapIndexed { x, col -> if (col == '#') Point(x, y) else null } }
@@ -112,8 +86,6 @@ fun main() {
     val height = inputLines.size
 
     val asteroidsMap = asteroids.map { it to true }.toMap()
-
-    println(gcd(5, 2))
 
     val grid = asteroids.map { asteroid ->
         val grid = Grid(width, height, asteroid, asteroidsMap.minus(asteroid).toMutableMap())
