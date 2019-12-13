@@ -302,8 +302,6 @@ arcade_cabinet_software = [1, 380, 379, 385, 1008, 2663, 704183, 381, 1005, 381,
 
 def init_game():
     game_state = {}
-    bal_pos = (-1, -1)
-    paddle_pos = (-1, -1)
 
     try:
         memory = Memory({i: arcade_cabinet_software[i] for i in range(len(arcade_cabinet_software))})
@@ -314,16 +312,12 @@ def init_game():
             x = next(arcade_cabinet)
             y = next(arcade_cabinet)
             tile_id = next(arcade_cabinet)
-            if tile_id == 3:
-                paddle_pos = (x, y)
-            elif tile_id == 4:
-                bal_pos = (x, y)
             game_state[(x, y)] = tile_id
     except StopIteration:
-        return game_state, bal_pos, paddle_pos
+        return game_state
 
 
-initialized_game, ball_position, paddle_position = init_game()
+initialized_game = init_game()
 
 block_tiles = [initialized_game[pos] for pos in initialized_game if initialized_game[pos] == 2]
 
@@ -398,7 +392,6 @@ def play_game():
             else:
                 game_state[(x, y)] = tile_or_score
 
-            # only draw or calculate positions if paddle or ball position changed
             if tile_or_score in [3, 4]:
                 if tile_or_score == 3:
                     paddle_pos = (x, y)
@@ -417,9 +410,9 @@ def play_game():
                 print(inputs)
 
     except StopIteration:
-        print("STOP ITERATION CALLED, ENDING")
+        print("Program ended")
         draw_screen(game_state, score, joystick_input, current_round)
         return
 
 
-play_game(initialized_game, ball_position, paddle_position)
+play_game()
