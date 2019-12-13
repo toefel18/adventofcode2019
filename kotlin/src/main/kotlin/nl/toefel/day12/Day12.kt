@@ -1,8 +1,10 @@
 package nl.toefel.day12
 
 import java.io.File
+import java.lang.Integer.max
 import kotlin.math.absoluteValue
 import kotlin.math.sign
+
 
 data class Point3D(val x: Int, val y: Int, val z: Int) {
     fun applyGravity(other: Point3D) = Point3D(
@@ -12,7 +14,6 @@ data class Point3D(val x: Int, val y: Int, val z: Int) {
 
     operator fun plus(other: Point3D) = Point3D(this.x + other.x, this.y + other.y, this.z + other.z)
     fun energy(): Int = x.absoluteValue + y.absoluteValue + z.absoluteValue
-    fun digitString(): String = x.toString().padStart(3) + y.toString().padStart(3) + z.toString().padStart(3)
 }
 
 data class Moon(val pos: Point3D, val velocity: Point3D) {
@@ -31,7 +32,7 @@ fun List<Moon>.print(step: Int) {
 
 
 fun main() {
-//    part1()
+    part1()
     part2()
 }
 
@@ -77,19 +78,19 @@ private fun part2() {
     currentMoons.writeVelocityTo(velocityValues)
 
     // find the repeating sequence per moon per velocity
-    var periods = velocityValues.findRepeatingSequenceLengths()
+    var periods = velocityValues.findRepeatingSequenceLengths(0)
 
     // keep computing values until we find a period (repeated sequence) for each moons velocity axis
     generateSequence(1) { it + 1 }.takeWhile { !periods.values.all { it > 0 } }.forEach { step ->
         currentMoons = currentMoons.map { it.applyGravity(currentMoons.minus(it)) }
         currentMoons.writeVelocityTo(velocityValues)
-        periods = velocityValues.findRepeatingSequenceLengths()
+        periods = velocityValues.findRepeatingSequenceLengths(step)
     }
 
     periods.forEach { (k, v) -> println("$k $v") }
 
     // now compute the least common multiple of all the sequence lengths
-    val leastCommonMultipleOfAllSequences = periods.values.reduce { acc, next -> lcm(acc, next)}
+    val leastCommonMultipleOfAllSequences = periods.values.reduce { acc, next -> lcm2(acc, next)}
     println("Least common multiple of all sequences = $leastCommonMultipleOfAllSequences")
 }
 
@@ -101,30 +102,49 @@ fun List<Moon>.writeVelocityTo(velocities: MutableMap<String, MutableList<Long>>
     }
 }
 
-/** finds the repeating sequence per list. For example: 0, 1, 2, 0, 1, 2  will find 0, 1, 2 */
-fun MutableMap<String, MutableList<Long>>.findRepeatingSequences(): Map<String, List<Long>> {
-    return this.mapValues { findRepeatingSequence(it.value) }
+val cache: MutableMap<String, Long> = mutableMapOf()
+
+fun MutableMap<String, MutableList<Long>>.findRepeatingSequenceLengths(step: Int): Map<String, Long> {
+    return this.mapValues { entry ->
+        if (cache.containsKey(entry.key)) {
+            cache[entry.key]!!
+        } else {
+            val sequenceLength = findRepeatingSequence(entry.value, step)
+            if (sequenceLength > 0) {
+                cache[entry.key] = sequenceLength
+            }
+            sequenceLength
+        }
+    }
 }
 
-/** finds the length of a repeating sequence, for example if [findRepeatingSequences] returns 0,1,2 then this will return 3*/
-fun MutableMap<String, MutableList<Long>>.findRepeatingSequenceLengths(): Map<String, Long> {
-    return findRepeatingSequences().mapValues { it.value.size.toLong() }
+fun findRepeatingSequence(intList: List<Long>, step: Int): Long {
+    (max(step / 2 - 1, 0) until intList.size / 2).forEach { idx ->
+        val currentPeriod = intList.subList(0, idx)
+        val nextPeriod = intList.subList(idx, 2 * idx)
+        if (currentPeriod == nextPeriod) {
+            return currentPeriod.size.toLong()
+        }
+    }
+    return 0
 }
 
 // greatest common divisor
 fun gcd(a: Long, b: Long): Long = if (b == 0L) a else gcd(b, a % b)
 
-// least common multiple
-fun lcm(a: Long, b: Long): Long = (a * b) / gcd(a, b)
-
-
-fun findRepeatingSequence(intList: List<Long>): List<Long> {
-    (2 until intList.size / 2).forEach { idx ->
-        val currentPeriod = intList.subList(0, idx)
-        val nextPeriod = intList.subList(idx, 2 * idx)
-        if (currentPeriod == nextPeriod) {
-            return currentPeriod
-        }
+// a simpler implementation like (a * b) / gcd(a, b) overflows and provides the wrong answer
+// taken from https://www.baeldung.com/java-least-common-multiple
+fun lcm2(number1: Long, number2: Long): Long {
+    if (number1 == 0L || number2 == 0L) {
+        return 0
     }
-    return listOf()
+    val absNumber1 = Math.abs(number1)
+    val absNumber2 = Math.abs(number2)
+    val absHigherNumber = Math.max(absNumber1, absNumber2)
+    val absLowerNumber = Math.min(absNumber1, absNumber2)
+    var lcm = absHigherNumber
+    while (lcm % absLowerNumber != 0L) {
+        lcm += absHigherNumber
+    }
+    return lcm
 }
