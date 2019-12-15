@@ -39,6 +39,12 @@ class Point:
         else:
             raise ValueError(f"Points are not adjacent this={self} target={target}")
 
+    def adjacent_points(self):
+        return [self + Direction.DOWN.offset,
+                self + Direction.UP.offset,
+                self + Direction.LEFT.offset,
+                self + Direction.RIGHT.offset]
+
 
 # https://stackoverflow.com/questions/12680080/python-enums-with-attributes
 class Direction(enum.Enum):
@@ -81,18 +87,18 @@ class MapObject(enum.Enum):
     UNDISCOVERED = ' '
     OPEN = '.'
     WALL = '#'
-    OXYGEN_STATION = 'O'
+    OXYGEN = 'O'
     DROID = 'D'
     ORIGIN = 'X'
     PATH = '*'
 
 
 class Path:
-    def __init__(self, pos: Point):
-        self.steps = [pos]
+    def __init__(self, initial: list):
+        self.steps = initial
 
-    def length(self):
-        return len(self.steps)
+    def copy(self):
+        return Path(self.steps.copy())
 
     def pos(self):
         return self.steps[len(self.steps) - 1]
@@ -122,45 +128,51 @@ class PointDirection:
 
 class Pathfinder:
     def __init__(self):
-        self.path = Path(Point(0, 0))
+        self.path = Path([Point(0, 0)])
         self.floor_plan = {Point(0, 0): MapObject.OPEN}
         self.explored_point_directions = set()
         self.explore_order = (Direction.DOWN, Direction.UP, Direction.RIGHT, Direction.LEFT)
         self.repair_robot = None  # init later!
         self.robot_input = []
+        self.path_to_oxygen_station = None
 
-    def find_oxygen_station(self) -> Path:
+    def explore_all_paths_and_find_oxygen_station(self) -> Path:
         iteration = 0
         while True:
             iteration += 1
             direction = self.next_direction_to_explore()
             if direction is None:
+                if len(self.path.steps) == 1:  # 1 is origin
+                    print(f"Finished: no more steps to backtrack to after {iteration} iterations")
+                    break
                 self.back_track()
                 continue
 
-            next_pos = self.path.pos() + direction.offset
-            self.robot_input.append(int(direction.value))
+            self.move_robot_in_direction(direction)
 
-            self.init_robot_if_not_active()
-            status = Status(next(self.repair_robot))
-            self.explored_point_directions.add(PointDirection(self.path.pos(), direction))
-            # print(f"trying from {self.path.pos()} to {direction} is {next_pos}, got status {status}")
+        self.print_floor_plan(iteration)
+        return self.path_to_oxygen_station
 
-            if status == Status.HIT_WALL:
-                self.floor_plan[next_pos] = MapObject.WALL
-            elif status == Status.MOVE_SUCCEEDED:
-                self.path.append(next_pos)
-                self.explored_point_directions.add(PointDirection(self.path.pos(), direction.opposite()))
-                self.floor_plan[next_pos] = MapObject.OPEN
-            elif status == Status.REACHED_OYXGEN_STATION:
-                self.path.append(next_pos)
-                self.explored_point_directions.add(PointDirection(self.path.pos(), direction.opposite()))
-                self.floor_plan[next_pos] = MapObject.OXYGEN_STATION
-                print("reached oxygen station")
-                break
-
-        self.print_floorplan(iteration)
-        return self.path
+    def move_robot_in_direction(self, direction):
+        next_pos = self.path.pos() + direction.offset
+        self.robot_input.append(int(direction.value))
+        self.init_robot_if_not_active()
+        status = Status(next(self.repair_robot))
+        self.explored_point_directions.add(PointDirection(self.path.pos(), direction))
+        # print(f"trying from {self.path.pos()} to {direction} is {next_pos}, got status {status}")
+        if status == Status.HIT_WALL:
+            self.floor_plan[next_pos] = MapObject.WALL
+        elif status == Status.MOVE_SUCCEEDED:
+            self.path.append(next_pos)
+            self.explored_point_directions.add(PointDirection(self.path.pos(), direction.opposite()))
+            self.floor_plan[next_pos] = MapObject.OPEN
+        elif status == Status.REACHED_OYXGEN_STATION:
+            self.path.append(next_pos)
+            self.explored_point_directions.add(PointDirection(self.path.pos(), direction.opposite()))
+            self.floor_plan[next_pos] = MapObject.OXYGEN
+            if self.path_to_oxygen_station is None:
+                self.path_to_oxygen_station = self.path.copy()
+            print("reached oxygen station")
 
     def back_track(self):
         dead_end_pos = self.path.backtrack()
@@ -168,7 +180,6 @@ class Pathfinder:
         direction_back = dead_end_pos.direction_to(previous_pos)
         self.robot_input.append(int(direction_back.value))
         status = Status(next(self.repair_robot))
-        # print(f"backtracking from {dead_end_pos} to {previous_pos} using direction {direction_back} got status {status}")
         if status != Status.MOVE_SUCCEEDED:
             raise ValueError(f"received status {status} while backtracking from {dead_end_pos} to {previous_pos}")
 
@@ -189,7 +200,7 @@ class Pathfinder:
 
         return None
 
-    def print_floorplan(self, iteration):
+    def print_floor_plan(self, iteration=None):
         pos_droid = self.path.pos()
 
         minX = min([pos.x for pos in self.floor_plan.keys()]) - 1
@@ -198,18 +209,18 @@ class Pathfinder:
         maxX = max([pos.x for pos in self.floor_plan.keys()]) + 1
         maxY = max([pos.y for pos in self.floor_plan.keys()]) + 1
 
-        print(f"iteration {iteration} with grid of width {maxX - minX} and height {maxY - minY}")
+        # print(f"iteration {iteration} with grid of width {maxX - minX} and height {maxY - minY}")
         for y in range(minY, maxY, 1):
             for x in range(minX, maxX, 1):
                 current_point = Point(x, y)
                 symbol = self.floor_plan.get(current_point, MapObject.UNDISCOVERED)
-                if current_point in self.path.steps and symbol != MapObject.OXYGEN_STATION:
+                if current_point in self.path.steps and symbol != MapObject.OXYGEN:
                     if symbol == MapObject.WALL:
                         raise ValueError(f"position {current_point} is a wall but also exists in path")
                     symbol = MapObject.PATH
                 if current_point == Point(0, 0):
                     symbol = MapObject.ORIGIN
-                elif current_point == pos_droid and symbol != MapObject.OXYGEN_STATION:
+                elif current_point == pos_droid and symbol != MapObject.OXYGEN:
                     symbol = MapObject.DROID
 
                 print(symbol.value, end="")
@@ -217,8 +228,36 @@ class Pathfinder:
             print()
         print()
 
+    def measure_time_for_oxigen_to_fill_locations(self):
+        oxygen_positions = self.get_locations(MapObject.OXYGEN)
+        open_positions = self.get_locations(MapObject.OPEN)
+
+        iteration = 0
+        while len(open_positions) > 0:
+            iteration += 1
+
+            adjacent_open_positions = [new_point
+                                       for ox in oxygen_positions
+                                       for new_point in ox.adjacent_points()
+                                       if self.floor_plan[new_point] == MapObject.OPEN]
+
+            for pos in adjacent_open_positions:
+                self.floor_plan[pos] = MapObject.OXYGEN
+
+            oxygen_positions = self.get_locations(MapObject.OXYGEN)
+            open_positions = self.get_locations(MapObject.OPEN)
+
+        self.print_floor_plan()
+        return iteration
+
+    def get_locations(self, position_type: MapObject):
+        return [pos for pos, obj in self.floor_plan.items() if obj == position_type]
+
 
 pathfinder = Pathfinder()
-path = pathfinder.find_oxygen_station()
+path = pathfinder.explore_all_paths_and_find_oxygen_station()
 
 print(f"part1 = {len(path.steps) - 1}")  # subtract the starting pos
+
+time_for_locations_to_fill = pathfinder.measure_time_for_oxigen_to_fill_locations()
+print(f"part 2 = it took {time_for_locations_to_fill} minutes")
