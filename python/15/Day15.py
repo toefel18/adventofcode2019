@@ -150,7 +150,7 @@ class Pathfinder:
 
             self.move_robot_in_direction(direction)
 
-        self.print_floor_plan(iteration)
+        self.print_floor_plan()
         return self.path_to_oxygen_station
 
     def move_robot_in_direction(self, direction):
@@ -199,7 +199,7 @@ class Pathfinder:
 
         return None
 
-    def print_floor_plan(self, iteration=None):
+    def print_floor_plan(self, draw_current_path = False):
         pos_droid = self.path.pos()
 
         minX = min([pos.x for pos in self.floor_plan.keys()]) - 1
@@ -208,15 +208,14 @@ class Pathfinder:
         maxX = max([pos.x for pos in self.floor_plan.keys()]) + 1
         maxY = max([pos.y for pos in self.floor_plan.keys()]) + 1
 
-        # print(f"iteration {iteration} with grid of width {maxX - minX} and height {maxY - minY}")
         for y in range(minY, maxY, 1):
             for x in range(minX, maxX, 1):
                 current_point = Point(x, y)
                 symbol = self.floor_plan.get(current_point, MapObject.UNDISCOVERED)
-                if current_point in self.path.steps and symbol != MapObject.OXYGEN:
-                    if symbol == MapObject.WALL:
-                        raise ValueError(f"position {current_point} is a wall but also exists in path")
+                # for debugging, its nice to see the path that has been taken
+                if draw_current_path and current_point in self.path.steps and symbol != MapObject.OXYGEN:
                     symbol = MapObject.PATH
+
                 if current_point == Point(0, 0):
                     symbol = MapObject.ORIGIN
                 elif current_point == pos_droid and symbol != MapObject.OXYGEN:
