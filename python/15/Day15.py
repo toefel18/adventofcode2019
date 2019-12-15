@@ -172,7 +172,6 @@ class Pathfinder:
             self.floor_plan[next_pos] = MapObject.OXYGEN
             if self.path_to_oxygen_station is None:
                 self.path_to_oxygen_station = self.path.copy()
-            print("reached oxygen station")
 
     def back_track(self):
         dead_end_pos = self.path.backtrack()
